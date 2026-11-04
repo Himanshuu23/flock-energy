@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Urja Meter API</title>
+  <style>
+    body { background: #000; color: #fff; font-family: monospace; padding: 20px; }
+    .route { margin-bottom: 30px; }
+    input { width: 600px; padding: 6px; }
+    button { padding: 6px 12px; margin-left: 6px; }
+    pre { margin-top: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Urja Meter API</h2>
+
+  <div class="route">
+    <input value="/health">
+    <button class="send">Send</button>
+    <button class="copy">Copy</button>
+    <pre></pre>
+  </div>
+
+  <div class="route">
+    <input value="/api/meters?q=&page=1">
+    <button class="send">Send</button>
+    <button class="copy">Copy</button>
+    <pre></pre>
+  </div>
+
+  <div class="route">
+    <input value="/api/meters/J100000">
+    <button class="send">Send</button>
+    <button class="copy">Copy</button>
+    <pre></pre>
+  </div>
+
+  <div class="route">
+    <input value="/api/meters/J100000/consumption?from=2026-06-24&to=2026-06-25">
+    <button class="send">Send</button>
+    <button class="copy">Copy</button>
+    <pre></pre>
+  </div>
+
+  <div class="route">
+    <input value="/api/transformers?page=1">
+    <button class="send">Send</button>
+    <button class="copy">Copy</button>
+    <pre></pre>
+  </div>
+
+  <script>
+    document.querySelectorAll('.route').forEach(function (route) {
+      var input = route.querySelector('input');
+      var output = route.querySelector('pre');
+
+      route.querySelector('.send').onclick = async function () {
+        output.textContent = 'Loading...';
+        try {
+          var res = await fetch(input.value);
+          var text = await res.text();
+          try { text = JSON.stringify(JSON.parse(text), null, 2); } catch (e) {}
+          output.textContent = res.status + '\n' + text;
+        } catch (err) {
+          output.textContent = 'Request failed: ' + err.message;
+        }
+      };
+
+      route.querySelector('.copy').onclick = function () {
+        navigator.clipboard.writeText(output.textContent);
+      };
+    });
+  </script>
+</body>
+</html>

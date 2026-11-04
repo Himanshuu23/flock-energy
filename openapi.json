@@ -1,0 +1,768 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Urja Meter API",
+    "version": "1.0.0",
+    "description": "A clean JSON API in front of the Urja Meter Ops portal. The service logs in to the portal itself, so callers need no portal credentials."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Meters"
+    },
+    {
+      "name": "Transformers"
+    },
+    {
+      "name": "System"
+    }
+  ],
+  "paths": {
+    "/api/meters": {
+      "get": {
+        "tags": [
+          "Meters"
+        ],
+        "summary": "List meters",
+        "operationId": "listMeters",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Search text, matched by the portal against meter number and serial number. Up to 100 characters.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number, starting at 1. The portal uses a fixed page size of 20.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of meters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The portal failed or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meters/{meterId}": {
+      "get": {
+        "tags": [
+          "Meters"
+        ],
+        "summary": "Get one meter",
+        "operationId": "getMeter",
+        "description": "Nameplate details, location and the network hierarchy from zone down to distribution transformer.",
+        "parameters": [
+          {
+            "name": "meterId",
+            "in": "path",
+            "required": true,
+            "description": "Meter number, for example J100000",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,32}$"
+            },
+            "example": "J100000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The meter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meter id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The portal failed or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meters/{meterId}/consumption": {
+      "get": {
+        "tags": [
+          "Meters"
+        ],
+        "summary": "Get consumption readings for a meter",
+        "operationId": "getConsumption",
+        "description": "Half-hourly readings. The portal gives cumulative register values, so the response contains both the raw readings and the usage in each interval worked out from them. Date values without a zone are read in the portal's timezone (IST by default).",
+        "parameters": [
+          {
+            "name": "meterId",
+            "in": "path",
+            "required": true,
+            "description": "Meter number, for example J100000",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,32}$"
+            },
+            "example": "J100000"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start of the range, inclusive. A date (2026-06-24) or date-time (2026-06-24T10:00 or with a zone).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-06-24"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End of the range, inclusive. A date-only value covers that whole day.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-06-25"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Readings for the meter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Consumption"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meter id or date range",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The portal failed or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transformers": {
+      "get": {
+        "tags": [
+          "Transformers"
+        ],
+        "summary": "List distribution transformers",
+        "operationId": "listTransformers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number, starting at 1. The portal uses a fixed page size of 20.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of transformers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransformerList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The portal failed or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Service health",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "The service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "This specification",
+        "operationId": "openapiSpec",
+        "responses": {
+          "200": {
+            "description": "OpenAPI document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "meter_not_found"
+          },
+          "message": {
+            "type": "string",
+            "example": "Meter J999999 was not found"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": [
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 403
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 21
+          }
+        }
+      },
+      "MeterSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "SE33962"
+          },
+          "make": {
+            "type": "string",
+            "nullable": true,
+            "example": "HPL"
+          },
+          "phaseType": {
+            "type": "string",
+            "nullable": true,
+            "example": "single"
+          },
+          "installStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "Decommissioned"
+          },
+          "transformerCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "DT-001"
+          }
+        }
+      },
+      "MeterList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": 26.938961002479868
+          },
+          "longitude": {
+            "type": "number",
+            "example": 75.83095696146852
+          }
+        }
+      },
+      "Hierarchy": {
+        "type": "object",
+        "description": "Each level is split into a name and a code. A level is null if the portal gave no value.",
+        "properties": {
+          "zone": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "circle": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "division": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "subdivision": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "substation": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "feeder": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "transformer": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "code": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "MeterDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "SE33962"
+          },
+          "make": {
+            "type": "string",
+            "nullable": true,
+            "example": "HPL"
+          },
+          "phaseType": {
+            "type": "string",
+            "nullable": true,
+            "example": "single"
+          },
+          "installStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "Decommissioned"
+          },
+          "installType": {
+            "type": "string",
+            "nullable": true,
+            "example": "Whole Current"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "hierarchy": {
+            "$ref": "#/components/schemas/Hierarchy"
+          }
+        }
+      },
+      "Reading": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "description": "ISO 8601 with the portal's UTC offset",
+            "example": "2026-06-24T00:00:00+05:30"
+          },
+          "kwhReading": {
+            "type": "number",
+            "nullable": true,
+            "description": "Cumulative kWh register value",
+            "example": 48439.16
+          },
+          "kvahReading": {
+            "type": "number",
+            "nullable": true,
+            "description": "Cumulative kVAh register value",
+            "example": 52314.29
+          },
+          "voltageR": {
+            "type": "number",
+            "nullable": true,
+            "description": "R-phase voltage in volts",
+            "example": 229
+          },
+          "consumptionKwh": {
+            "type": "number",
+            "nullable": true,
+            "description": "kWh used since the previous reading, null for the first reading or when it cannot be worked out",
+            "example": 0.42
+          },
+          "consumptionKvah": {
+            "type": "number",
+            "nullable": true,
+            "example": 0.45
+          },
+          "intervalMinutes": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Minutes since the previous reading, null for the first one",
+            "example": 30
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "gap",
+                "register_drop"
+              ]
+            },
+            "description": "gap: the previous reading is not 30 minutes earlier. register_drop: a register went down, so no consumption is given."
+          }
+        }
+      },
+      "Consumption": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "+05:30"
+          },
+          "units": {
+            "type": "object",
+            "properties": {
+              "kwh": {
+                "type": "string",
+                "example": "kWh"
+              },
+              "kvah": {
+                "type": "string",
+                "example": "kVAh"
+              },
+              "voltage": {
+                "type": "string",
+                "example": "V"
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer"
+              },
+              "from": {
+                "type": "string",
+                "nullable": true
+              },
+              "to": {
+                "type": "string",
+                "nullable": true
+              },
+              "totalKwh": {
+                "type": "number",
+                "nullable": true
+              },
+              "totalKvah": {
+                "type": "number",
+                "nullable": true
+              }
+            }
+          },
+          "quality": {
+            "type": "object",
+            "properties": {
+              "skippedRows": {
+                "type": "integer",
+                "description": "Rows dropped because the timestamp could not be read"
+              },
+              "duplicateTimestamps": {
+                "type": "integer",
+                "description": "Rows dropped because the same timestamp appeared more than once"
+              },
+              "gaps": {
+                "type": "integer"
+              },
+              "registerDrops": {
+                "type": "integer"
+              }
+            }
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reading"
+            }
+          }
+        }
+      },
+      "Transformer": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "DT-001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Malviya Nagar DT 1"
+          },
+          "feederCode": {
+            "type": "string",
+            "example": "F-001"
+          },
+          "capacityKva": {
+            "type": "number",
+            "nullable": true,
+            "example": 100
+          }
+        }
+      },
+      "TransformerList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Transformer"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      }
+    }
+  }
+}
