@@ -5,7 +5,7 @@ A small REST API in front of the Urja Meter Ops portal. The portal only has a we
 ![HTML UI ](public/ui.png)
 ## Investigation Screenshots
 
-**[Screenshots of Browser DevTools](./docs/investigation/README.md)**
+**Please find: [Screenshots of Browser DevTools](./docs/investigation/README.md)**
 
 ## What it does
 
