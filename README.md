@@ -3,7 +3,7 @@
 A small REST API in front of the Urja Meter Ops portal. The portal only has a web UI, so this service logs in to it, calls the same endpoints the pages call, and hands back clean JSON: meters, location, hierarchy, consumption and transformers.
 
 ![HTML UI ](public/ui.png)
-[View Investigation Screenshots](./docs/investigation/README.md)
+[Investigation Screenshots](./docs/investigation/README.md)
 ## What it does
 
 | Endpoint | Gives you |
